@@ -172,6 +172,18 @@ public class BlancoSqlFormatter {
                     argList.remove(index + 1);
                     argList.remove(index + 1);
                 }
+
+                // epinszteinic added start
+                // INNER JOIN, LEFT JOIN, OUTER JOINの処理
+                if((t0.getString().equalsIgnoreCase("INNER")
+                        || t0.getString().equalsIgnoreCase("LEFT")
+                        || t0.getString().equalsIgnoreCase("RIGHT"))
+                    && t2.getString().equalsIgnoreCase("JOIN")){
+                    t0.setString(t0.getString() + " " + t2.getString());
+                    argList.remove(index + 1);
+                    argList.remove(index + 1);
+                }
+                // epinszteinic added end
             }
 
             // Oracle対応 begin 2007/10/24 A.Watanabe
@@ -184,6 +196,34 @@ public class BlancoSqlFormatter {
             }
             // Oracle対応 end
         }
+
+        // epinszteinic added start
+        // LEFT OUTER JOIN, RIGHT OUTER JOINの処理
+        for (int index = 0; index < argList.size() - 4; index++) {
+            BlancoSqlToken t0 = argList.get(index);
+            BlancoSqlToken t1 = argList.get(index + 1);
+            BlancoSqlToken t2 = argList.get(index + 2);
+            BlancoSqlToken t3 = argList.get(index + 3);
+            BlancoSqlToken t4 = argList.get(index + 4);
+
+            if (t0.getType() == BlancoSqlTokenConstants.KEYWORD
+                    && t1.getType() == BlancoSqlTokenConstants.SPACE
+                    && t2.getType() == BlancoSqlTokenConstants.KEYWORD
+                    && t3.getType() == BlancoSqlTokenConstants.SPACE
+                    && t4.getType() == BlancoSqlTokenConstants.KEYWORD) {
+                if((t0.getString().equalsIgnoreCase("LEFT")
+                        || t0.getString().equalsIgnoreCase("RIGHT"))
+                        && t2.getString().equalsIgnoreCase("OUTER")
+                        && t4.getString().equalsIgnoreCase("JOIN")){
+                    t0.setString(t0.getString() + " " + t2.getString() + " " + t4.getString());
+                    argList.remove(index + 1);
+                    argList.remove(index + 1);
+                    argList.remove(index + 1);
+                    argList.remove(index + 1);
+                }
+            }
+        }
+        // epinszteinic added end
 
         // インデントを整える。
         int indent = 0;
@@ -247,6 +287,16 @@ public class BlancoSqlFormatter {
                     index += insertReturnAndIndent(argList, index, indent - 1);
                     index += insertReturnAndIndent(argList, index + 1, indent);
                 }
+                // epinszteinic added start
+                // キーワードの前でindentを１つ減らして改行。
+                if (token.getString().equalsIgnoreCase("INNER JOIN")
+                        || token.getString().equalsIgnoreCase("LEFT JOIN")
+                        || token.getString().equalsIgnoreCase("RIGHT JOIN")
+                        || token.getString().equalsIgnoreCase("LEFT OUTER JOIN")
+                        || token.getString().equalsIgnoreCase("RIGHT OUTER JOIN")) {
+                    index += insertReturnAndIndent(argList, index, indent - 1);
+                }
+                // epinszteinic added end
                 // キーワードの前でindentを１つ減らして改行、キーワードの後ろでindentを戻して改行。
                 if (token.getString().equalsIgnoreCase("VALUES")) {
                     indent--;
@@ -264,10 +314,18 @@ public class BlancoSqlFormatter {
                     index += insertReturnAndIndent(argList, index, indent);
                 }
                 // キーワードの前で改行
-                if (token.getString().equalsIgnoreCase("ON")
-                        || token.getString().equalsIgnoreCase("USING")) {
+                // epinszteinic modified start
+//                if (token.getString().equalsIgnoreCase("ON")
+//                        || token.getString().equalsIgnoreCase("USING")) {
+//                    index += insertReturnAndIndent(argList, index, indent + 1);
+//                }
+                if (token.getString().equalsIgnoreCase("USING")) {
                     index += insertReturnAndIndent(argList, index, indent + 1);
                 }
+                if (token.getString().equalsIgnoreCase("ON")) {
+                    index += insertReturnAndIndent(argList, index, indent);
+                }
+                // epinszteinic modified end
                 // キーワードの前で改行。indentを強制的に０にする。
                 if (token.getString().equalsIgnoreCase("UNION")
                         || token.getString().equalsIgnoreCase("INTERSECT")
